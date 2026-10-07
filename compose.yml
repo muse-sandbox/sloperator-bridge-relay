@@ -1,0 +1,30 @@
+name: sloperator-bridge-relay
+
+services:
+  relay:
+    build: .
+    image: sloperator-bridge-relay:local
+    env_file: .env
+    environment:
+      RELAY_DB: /data/relay.db
+    ports:
+      - "127.0.0.1:8095:8095"     # localhost only; nginx exposes just /bridge/v1/worker/
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8095/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
